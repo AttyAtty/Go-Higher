@@ -35,7 +35,7 @@ public class GameManager : MonoBehaviour
     public GameObject dynamicBoxPrefab;
 
     [Header("Quest Settings")]
-    public int requiredPickupsPerFloor = 2; // 1階あたりのノルマ
+    public int requiredPickupsPerFloor = 1; // 1階あたりのノルマ
     private int currentFloorPickups = 0;   // 今の階で取った数
     public bool isWarpEnabled = false;      // ワープが有効か
 
@@ -43,7 +43,7 @@ public class GameManager : MonoBehaviour
     private List<GameObject> spawnedFloors = new List<GameObject>();
 
     private int score = 0;
-    private bool isGameActive = false;
+    public bool isGameActive = false;
 
     void Awake()
     {
@@ -55,30 +55,41 @@ public class GameManager : MonoBehaviour
     {
         winTextObject.SetActive(false);
 
-        GameObject f1 = GameObject.Find("Floor1");
+        SetupInitialFloor("Floor1", 1, 0.5f);
+        SetupInitialFloor("Floor2", 2, 40f);
 
-        // ゲーム開始時に1階と2階の敵を生成
-        // 1階(高さ0m)に1体
-        if (f1 != null) spawnedFloors.Add(f1);
-        SpawnEnemies(new Vector3(0, 0, 0), 1);
-        SpawnPickups(new Vector3(0, 0.5f, 0), 3);
-        SpawnObstacles(new Vector3(0, 0.5f, 0), 4); // メソッド名を修正
-
-        GameObject f2 = GameObject.Find("Floor2");
-        
-        // 2階(高さ40m)に2体
-        if (f2 != null) spawnedFloors.Add(f2);
-        SpawnEnemies(new Vector3(0, 40f, 0), 2);
-        SpawnPickups(new Vector3(0, 40f, 0), 3);
-        SpawnObstacles(new Vector3(0, 40f, 0), 5); // メソッド名を修正
+        RefreshQuestProgress();
 
         StartCoroutine(StartGameRoutine());
+    }
+
+    // 初期配置フロアのセットアップ
+    void SetupInitialFloor(string name, int floorNum, float height)
+    {
+        GameObject f = GameObject.Find(name);
+        if (f != null)
+        {
+            spawnedFloors.Add(f);
+            Vector3 center = new Vector3(0, height, 0);
+
+            // 要望: 出現数は階数の2倍
+            SpawnEnemies(center, floorNum);
+            SpawnPickups(center, floorNum * 2);
+            SpawnObstacles(center, 3 + floorNum);
+            SpawnDynamicBoxes(center, floorNum * 2);
+
+            WarpStep ws = f.GetComponentInChildren<WarpStep>();
+            if (ws != null) ws.SetLocked();
+        }
     }
 
     IEnumerator StartGameRoutine()
     {
         isGameActive = false;
         countdownText.gameObject.SetActive(true);
+
+        // すべてのものを非アクティブに
+        SetAllEntitiesActive(false);
 
         for (int i = 3; i > 0; i--)
         {
@@ -87,10 +98,35 @@ public class GameManager : MonoBehaviour
         }
 
         countdownText.text = "GO!";
+
+        //タイミングで全員の動きを解放する
+        isGameActive = true;
+        SetAllEntitiesActive(true);
         yield return new WaitForSeconds(1f);
         countdownText.gameObject.SetActive(false);
 
-        isGameActive = true;
+    }
+
+    // 動体をまとめて「停止/再開」させる
+    void SetAllEntitiesActive(bool active)
+    {
+        // プレイヤーの物理を止める/動かす
+        if (player != null)
+        {
+            Rigidbody rb = player.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                // active=falseなら物理演算をオフ(isKinematic)にしてピタッと止める
+                rb.isKinematic = !active;
+            }
+        }
+
+        // 敵のAIを止める/動かす
+        var agents = Object.FindObjectsByType<UnityEngine.AI.NavMeshAgent>(FindObjectsSortMode.None);
+        foreach (var agent in agents)
+        {
+            agent.isStopped = !active;
+        }
     }
 
     void Update()
@@ -129,7 +165,7 @@ public class GameManager : MonoBehaviour
         currentFloorPickups = 0; // リセット
         isWarpEnabled = false;   // ワープ封印
         currentFloor++; //階数の更新
-        requiredPickupsPerFloor++; // ノルマ増加
+        requiredPickupsPerFloor = currentFloor; // ノルマ増加
 
         UpdateRemainingUI();
 
@@ -140,11 +176,12 @@ public class GameManager : MonoBehaviour
         GameObject newFloor = Instantiate(levelUnitPrefab, nextPos, Quaternion.identity);
         spawnedFloors.Add(newFloor); // リストに記録
 
+        //生成したフロア内のワープ板を封印する
+        WarpStep ws = newFloor.GetComponentInChildren<WarpStep>();
+        if (ws != null) ws.SetLocked();
+
         NavMeshSurface surface = newFloor.GetComponent<NavMeshSurface>();
-        if (surface != null)
-        {
-            surface.BuildNavMesh();
-        }
+        if (surface != null) surface.BuildNavMesh();
 
         // ナビメッシュが焼き上がるのを1フレーム待ってから敵を出す
         StartCoroutine(DelayedSpawn(nextPos, nextFloorToCreate + 1));
@@ -162,7 +199,7 @@ public class GameManager : MonoBehaviour
         // オブジェクト生成（階数 nextFloorToCreate に応じて増加）
         SpawnEnemies(nextPos, nextFloorToCreate);
         SpawnPickups(nextPos, 1 + 2 * nextFloorToCreate);
-        SpawnObstacles(nextPos, 3 + (nextFloorToCreate * 2));
+        SpawnObstacles(nextPos, 2 + (nextFloorToCreate * 2));
         SpawnDynamicBoxes(nextPos, nextFloorToCreate * 2);
 
         //お掃除機能：3つ以上前のフロアがあれば削除
@@ -175,6 +212,15 @@ public class GameManager : MonoBehaviour
 
     }
 
+    // クエスト状況をリセット・更新
+    void RefreshQuestProgress()
+    {
+        requiredPickupsPerFloor = currentFloor;
+        currentFloorPickups = 0;
+        isWarpEnabled = false;
+        UpdateRemainingUI();
+    }
+
     void UpdateRemainingUI()
     {
         if (remainingCountText != null)
@@ -183,14 +229,7 @@ public class GameManager : MonoBehaviour
             remainingCountText.text = currentFloorPickups.ToString() + " / " + requiredPickupsPerFloor.ToString();
 
             // 色を変える演出（任意）：ノルマ達成したら緑色にするなど
-            if (currentFloorPickups >= requiredPickupsPerFloor)
-            {
-                remainingCountText.color = Color.green;
-            }
-            else
-            {
-                remainingCountText.color = Color.white;
-            }
+            remainingCountText.color = (currentFloorPickups >= requiredPickupsPerFloor) ? Color.green : Color.white;
         }
     }
 
@@ -206,6 +245,16 @@ public class GameManager : MonoBehaviour
             GameObject enemy = Instantiate(enemyPrefab, pos, Quaternion.identity);
             // 生成された敵をフロアの子にする（フロア削除時に一緒に消えるようにする）
             enemy.transform.SetParent(spawnedFloors[spawnedFloors.Count - 1].transform);
+
+            UnityEngine.AI.NavMeshAgent agent = enemy.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null)
+            {
+                // ゲームがまだアクティブ（GO!の前）なら、最初から止めておく
+                if (!isGameActive)
+                {
+                    agent.isStopped = true;
+                }
+            }
         }
     }
 
@@ -250,9 +299,7 @@ public class GameManager : MonoBehaviour
     public void OnPickupCollected()
     {
         currentFloorPickups++;
-
-        // UIを更新
-        UpdateRemainingUI();
+        UpdateRemainingUI();// UIを更新
 
         if (currentFloorPickups >= requiredPickupsPerFloor)
         {
@@ -260,18 +307,26 @@ public class GameManager : MonoBehaviour
             {
                 isWarpEnabled = true;
 
-                // ワープ解放メッセージ（こちらは一時的な通知として利用）
+                // ワープ解放宣言
                 countdownText.gameObject.SetActive(true);
-                countdownText.text = "ワープ解放！";
+                countdownText.text = "Warp Enabled!";
                 Invoke("HideMessage", 3f);
 
-                WarpStep ws = Object.FindFirstObjectByType<WarpStep>();
-                if (ws != null) ws.SetUnlocked();
+                //リストのインデックスだと混乱してしまったので、物理的に同じフロアにあるWarpStepを探すように修正
+                WarpStep[] allWarpSteps = Object.FindObjectsByType<WarpStep>(FindObjectsSortMode.None);
+                foreach (var ws in allWarpSteps)
+                {
+                    // プレイヤーとワープ板の高さ(Y座標)の差が10m以内なら「今いる階の板」と判定
+                    if (Mathf.Abs(player.position.y - ws.transform.position.y) < 10f)
+                    {
+                        ws.SetUnlocked();
+                    }
+                }
             }
         }
     }
 
-    void HideMessage() { countdownText.gameObject.SetActive(false); }
+    void HideMessage() { if (countdownText != null) countdownText.gameObject.SetActive(false); }
 
     Vector3 GetRandomPos(Vector3 center)
     {
@@ -287,10 +342,33 @@ public class GameManager : MonoBehaviour
         winTextObject.SetActive(true);
         winTextObject.GetComponent<TextMeshProUGUI>().text = message;
 
-        // 3秒後にリスタートさせるなどの処理も可能
-         Invoke("Restart", 3f);
-    }
+        // 1. プレイヤーの物理挙動を止める
+        if (player != null)
+        {
+            Rigidbody playerRb = player.GetComponent<Rigidbody>();
+            if (playerRb != null)
+            {
+                playerRb.linearVelocity = Vector3.zero; // 速度を0に
+                playerRb.angularVelocity = Vector3.zero; // 回転を0に
+                playerRb.isKinematic = true; // 物理演算の影響を受けなくする
+            }
 
+            // もしプレイヤーのスクリプト（PlayerControllerなど）があれば無効化する
+            player.GetComponent<PlayerController>().enabled = false;
+        }
+
+        // 2. すべての敵のナビゲーションを止める
+        // 敵に NavMeshAgent がついている場合
+        UnityEngine.AI.NavMeshAgent[] agents = Object.FindObjectsByType<UnityEngine.AI.NavMeshAgent>(FindObjectsSortMode.None);
+        foreach (var agent in agents)
+        {
+            agent.isStopped = true; // 移動を停止
+        }
+
+        // 3秒後にリスタート
+        Invoke("Restart", 3f);
+    }
+    void Restart() { SceneManager.LoadScene(SceneManager.GetActiveScene().name); }
 
 
 }

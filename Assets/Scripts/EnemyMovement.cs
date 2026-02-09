@@ -19,6 +19,13 @@ public class EnemyMovement : MonoBehaviour
 
     void Update()
     {
+        //ゲームがアクティブでない（カウントダウン中やタイムアップ後）なら何もしない
+        if (GameManager.instance != null && !GameManager.instance.isGameActive)
+        {
+            navMeshAgent.isStopped = true;
+            return;
+        }
+
         if (player == null || !navMeshAgent.isOnNavMesh) return;
 
         // プレイヤーと自分の高さ（Y座標）の差を計算

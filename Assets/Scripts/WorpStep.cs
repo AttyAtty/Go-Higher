@@ -7,16 +7,19 @@ public class WarpStep : MonoBehaviour
     public Material unlockedMaterial; // インスペクターで緑色を入れる
 
     private Renderer targetRenderer;
-
+    void Start()
+    {
+        SetLocked();
+    }
     void Awake()
     {
         // 自分の見た目を変えるためのレンダラーを取得
         targetRenderer = GetComponent<Renderer>();
-        // 最初は赤色（封印）にする
+        // 最初は封印する
         SetLocked();
     }
 
-    // 赤色に変えるメソッド
+    // 深緑色に変えるメソッド
     public void SetLocked()
     {
         if (targetRenderer != null && lockedMaterial != null)
@@ -63,7 +66,7 @@ public class WarpStep : MonoBehaviour
                 // GameManagerに次の階の生成を依頼
                 GameManager.instance.AdvanceFloor();
 
-                // 次の階のために自分を赤色に戻しておく
+                // 次の階のために戻しておく
                 SetLocked();
 
                 Debug.Log("次の階へ進みました！");
