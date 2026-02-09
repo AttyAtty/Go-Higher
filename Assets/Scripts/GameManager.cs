@@ -226,7 +226,7 @@ public class GameManager : MonoBehaviour
         if (remainingCountText != null)
         {
             // "1 / 3" のような形式で表示
-            remainingCountText.text = currentFloorPickups.ToString() + " / " + requiredPickupsPerFloor.ToString();
+            remainingCountText.text = "Collect: " + currentFloorPickups.ToString() + " / " + requiredPickupsPerFloor.ToString();
 
             // 色を変える演出（任意）：ノルマ達成したら緑色にするなど
             remainingCountText.color = (currentFloorPickups >= requiredPickupsPerFloor) ? Color.green : Color.white;
@@ -330,7 +330,7 @@ public class GameManager : MonoBehaviour
 
     Vector3 GetRandomPos(Vector3 center)
     {
-        Vector3 pos = center + new Vector3(Random.Range(-8f, 8f), 0, Random.Range(-8f, 8f));
+        Vector3 pos = center + new Vector3(Random.Range(-7f, 7f), 0, Random.Range(-7f, 7f));
         if (Vector3.Distance(pos, center) < 2.5f) return Vector3.zero;
         return pos;
     }
