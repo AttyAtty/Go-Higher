@@ -1,12 +1,13 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // シーン切り替えに必要
+using UnityEngine.SceneManagement; // これが必要！
 
 public class TitleManager : MonoBehaviour
 {
-    // ボタンから呼ばれる関数
-    public void OnStartButtonClick()
+    // publicでないと、UnityエディタのOn Click一覧に出てきません
+    public void StartGame()
     {
-        // "MainScene" は今ゲームを作っているシーンの名前に書き換えてください
-        SceneManager.LoadScene("MainScene");
+        // 1番目のシーン（Minigame）を読み込む
+        // Build Profilesで Minigame が Index 1 になっている必要があります
+        SceneManager.LoadScene(1);
     }
 }
