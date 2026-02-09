@@ -57,7 +57,7 @@ public class PlayerController : MonoBehaviour
             // GameManager‚É•‰‚¯‚ð’Ê’m‚·‚é
             if (GameManager.instance != null)
             {
-                GameManager.instance.GameOver("You Lose!");
+                GameManager.instance.GameOver("You Lose!", true);
             }
         }
     }

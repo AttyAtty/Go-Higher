@@ -141,7 +141,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            GameOver("Time Up!");
+            GameOver("Time Up!", true);
         }
 
         // 高さ（Y座標）の更新
@@ -336,7 +336,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ゲームオーバー・勝利判定
-    public void GameOver(string message)
+    public void GameOver(string message, bool isCaught = false)
     {
         isGameActive = false;
         winTextObject.SetActive(true);
@@ -348,8 +348,8 @@ public class GameManager : MonoBehaviour
             Rigidbody playerRb = player.GetComponent<Rigidbody>();
             if (playerRb != null)
             {
-                playerRb.linearVelocity = Vector3.zero; // 速度を0に
-                playerRb.angularVelocity = Vector3.zero; // 回転を0に
+                //playerRb.linearVelocity = Vector3.zero; // 速度を0に
+                //playerRb.angularVelocity = Vector3.zero; // 回転を0に
                 playerRb.isKinematic = true; // 物理演算の影響を受けなくする
             }
 
@@ -365,10 +365,12 @@ public class GameManager : MonoBehaviour
             agent.isStopped = true; // 移動を停止
         }
 
-        // 3秒後にリスタート
-        Invoke("Restart", 3f);
-    }
-    void Restart() { SceneManager.LoadScene(SceneManager.GetActiveScene().name); }
+        GameController gc = GetComponent<GameController>();
+        if (gc != null)
+        {
+            gc.GameOver(score, currentFloor, isCaught);
+        }
 
+    }
 
 }
