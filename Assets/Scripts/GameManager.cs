@@ -141,7 +141,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            GameOver("Time Up!", true);
+            GameOver("Time Up!", false);
         }
 
         // 高さ（Y座標）の更新

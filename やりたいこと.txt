@@ -1,0 +1,33 @@
+①ArrivalもWarpも決まった場所に出るので、その場所をランダムにしたい。でもその出現箇所は階層の中のランダムではなく、四隅とどこか）今はフロアの形とか違うけどゆくゆくはその形も変えたいよね。よりランダム性を増やしたい。obstacleをリストにやったみたいに、マップもそういう感じでやるんかな。でも複雑な形とかは無理じゃね？だんだんAIに予測させるみたいな肝心になってくる。
+
+ってなると、キャラ増やしたくなるんだよね。
+
+②
+テクスチャを加えたい
+
+③ＳＥを加えたい。ＢＧＭとか
+
+④コンセプト
+コンセプトとしては、ハロウィンの夜、お化けに仮想していた子供が迷い込んでしまって、怪しい建物の中に入ってしまった！そして扉に鍵がかかってしまった。だから、とりあえず上に逃げるしかない！みたいなコンセプト。夢でいいや。
+
+仮装は後で足す。
+
+mixamoの人型ではsilly runを使う。滑稽な走り方してる
+立っているときは、Standing W/ Briefcase Idle
+結果発表の画面では、成功したときと失敗したときでResult画面に出現させたいよね。リアクションさせたい。
+
+達成したときは、息切れ的な
+失敗したときは、倒れている感じ。怒るでもいいな。お化けが喜んでいる。とかも面白そう。（これは後々余裕があれば）
+
+追加したアセット
+City People FREE Samples 子供　Player
+Gems and Crystals -Free  宝石　Pickup
+Little Ghost lowpoly(FREE) いろんなお化け　Enemy
+Cthulhu Idol - PBR なんかよくわからない宇宙人みたいな像　Obstacle
+Columns ancient ruins 遺跡のいろんなもの　Obstacle
+Worn Wooden Crate　古い木箱　Dynamicbox
+
+
+25+ Free Stylized Textures -Grass, Ground, Floors, Walls & More
+壁 Ancient Cobblestone か床と同じやつ 
+床 Pavement
