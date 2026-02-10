@@ -31,3 +31,6 @@ Worn Wooden Crate　古い木箱　Dynamicbox
 25+ Free Stylized Textures -Grass, Ground, Floors, Walls & More
 壁 Ancient Cobblestone か床と同じやつ 
 床 Pavement
+
+
+段差にも登れるように、rigidbodyを使うのはやめた。Character controllrで調整するようにした。プログラムで方向転換とかは指示。よって加速度運動というより、升目があって、縦横斜めに移動するような、そんな感じになった。

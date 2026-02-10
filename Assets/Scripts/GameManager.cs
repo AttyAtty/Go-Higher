@@ -1,9 +1,9 @@
-using UnityEngine;
-using TMPro;
 using System.Collections;
 using System.Collections.Generic; // Listを使うために追加
-using UnityEngine.SceneManagement;
+using TMPro;
 using Unity.AI.Navigation; // これを一番上に書く
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -75,7 +75,7 @@ public class GameManager : MonoBehaviour
             // 要望: 出現数は階数の2倍
             SpawnEnemies(center, floorNum);
             SpawnPickups(center, floorNum * 2);
-            SpawnObstacles(center, 3 + floorNum);
+            SpawnObstacles(center, 6 + floorNum);
             SpawnDynamicBoxes(center, floorNum * 2);
 
             WarpStep ws = f.GetComponentInChildren<WarpStep>();
@@ -113,12 +113,14 @@ public class GameManager : MonoBehaviour
         // プレイヤーの物理を止める/動かす
         if (player != null)
         {
+            // CharacterControllerを取得して無効化
+            CharacterController cc = player.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = active;
+
+            // Rigidbodyを使わなくなったので、以下の処理は実質不要になりますが、
+            // エラー防止のために GetComponent<Rigidbody>() != null を確認するようにします
             Rigidbody rb = player.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                // active=falseなら物理演算をオフ(isKinematic)にしてピタッと止める
-                rb.isKinematic = !active;
-            }
+            if (rb != null) rb.isKinematic = !active;
         }
 
         // 敵のAIを止める/動かす
@@ -167,6 +169,11 @@ public class GameManager : MonoBehaviour
         currentFloor++; //階数の更新
         requiredPickupsPerFloor = currentFloor; // ノルマ増加
 
+        if (heightText != null)
+        {
+            heightText.text = "Floor: " + currentFloor.ToString();
+        }
+
         UpdateRemainingUI();
 
         nextFloorToCreate = currentFloor ;
@@ -199,8 +206,8 @@ public class GameManager : MonoBehaviour
         // オブジェクト生成（階数 nextFloorToCreate に応じて増加）
         SpawnEnemies(nextPos, nextFloorToCreate);
         SpawnPickups(nextPos, 1 + 2 * nextFloorToCreate);
-        SpawnObstacles(nextPos, 2 + (nextFloorToCreate * 2));
-        SpawnDynamicBoxes(nextPos, nextFloorToCreate * 2);
+        SpawnObstacles(nextPos, nextFloorToCreate * 2);
+        SpawnDynamicBoxes(nextPos, 1 + nextFloorToCreate);
 
         //お掃除機能：3つ以上前のフロアがあれば削除
         if (spawnedFloors.Count > 3)
@@ -279,7 +286,16 @@ public class GameManager : MonoBehaviour
 
             // 配列からランダムに1つ選ぶ
             GameObject prefab = obstaclePrefabs[Random.Range(0, obstaclePrefabs.Length)];
-            GameObject obj = Instantiate(prefab, pos, Quaternion.Euler(0, Random.Range(0, 360f), 0));
+            Vector3 spawnPos = new Vector3(pos.x, pos.y - 1f, pos.z); // 高さの微調整
+            GameObject obj = Instantiate(prefab, spawnPos, Quaternion.Euler(0, Random.Range(0, 360f), 0));
+            obj.transform.SetParent(spawnedFloors[spawnedFloors.Count - 1].transform);
+
+            // 生成されたオブジェクトに自動で Box Collider を付ける.一つ一つ形違うからね
+            if (obj.GetComponent<Collider>() == null)
+            {
+                obj.AddComponent<BoxCollider>();
+            }
+
             obj.transform.SetParent(spawnedFloors[spawnedFloors.Count - 1].transform);
         }
     }
@@ -316,8 +332,11 @@ public class GameManager : MonoBehaviour
                 WarpStep[] allWarpSteps = Object.FindObjectsByType<WarpStep>(FindObjectsSortMode.None);
                 foreach (var ws in allWarpSteps)
                 {
-                    // プレイヤーとワープ板の高さ(Y座標)の差が10m以内なら「今いる階の板」と判定
-                    if (Mathf.Abs(player.position.y - ws.transform.position.y) < 10f)
+                    float dist = Mathf.Abs(player.position.y - ws.transform.position.y);
+                    // デバッグログを出して、UnityのConsoleウィンドウで数値を確認できるようにする
+                    Debug.Log($"板発見: {ws.name}, プレイヤーとの高さ差: {dist}");
+
+                    if (dist < 30f) // 判定をさらに余裕持たせる
                     {
                         ws.SetUnlocked();
                     }
@@ -345,16 +364,13 @@ public class GameManager : MonoBehaviour
         // 1. プレイヤーの物理挙動を止める
         if (player != null)
         {
-            Rigidbody playerRb = player.GetComponent<Rigidbody>();
-            if (playerRb != null)
-            {
-                //playerRb.linearVelocity = Vector3.zero; // 速度を0に
-                //playerRb.angularVelocity = Vector3.zero; // 回転を0に
-                playerRb.isKinematic = true; // 物理演算の影響を受けなくする
-            }
+            // CharacterControllerを止める
+            CharacterController cc = player.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
 
-            // もしプレイヤーのスクリプト（PlayerControllerなど）があれば無効化する
-            player.GetComponent<PlayerController>().enabled = false;
+            // PlayerControllerを止める
+            PlayerController pc = player.GetComponent<PlayerController>();
+            if (pc != null) pc.enabled = false;
         }
 
         // 2. すべての敵のナビゲーションを止める

@@ -37,16 +37,16 @@ public class WarpStep : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // 1. まずGameManagerにワープしていいか確認
             if (GameManager.instance != null && GameManager.instance.isWarpEnabled)
             {
-                // --- ワープ実行 ---
+                // 1. CharacterControllerを取得
+                CharacterController cc = other.GetComponent<CharacterController>();
 
-                // 物理速度をリセット
-                Rigidbody rb = other.GetComponent<Rigidbody>();
-                if (rb != null) rb.linearVelocity = Vector3.zero;
+                // 2. 物理速度のリセット（CharacterControllerの場合は不要ですが、念のため）
+                // Rigidbody rb = other.GetComponent<Rigidbody>(); // これは消すかコメントアウト
+                // if (rb != null) rb.linearVelocity = Vector3.zero;
 
-                // 目的地(Arrival)を探す
+                // 目的地(Arrival)を探す処理はそのまま
                 Vector3 searchCenter = transform.position + new Vector3(0, 40f, 0);
                 Collider[] hitColliders = Physics.OverlapSphere(searchCenter, 30f);
                 Vector3 destination = searchCenter;
@@ -60,22 +60,14 @@ public class WarpStep : MonoBehaviour
                     }
                 }
 
-                // プレイヤーを移動
+                // 3. 重要：CharacterControllerを一時的に無効化してワープ
+                if (cc != null) cc.enabled = false;
                 other.transform.position = destination;
+                if (cc != null) cc.enabled = true; // ワープ後にすぐ有効化
 
-                // GameManagerに次の階の生成を依頼
                 GameManager.instance.AdvanceFloor();
-
-                // 次の階のために戻しておく
                 SetLocked();
-
                 Debug.Log("次の階へ進みました！");
-            }
-            else
-            {
-                // アイテムが足りない場合
-                Debug.Log("まだアイテムが足りない！ワープできません。");
-                // ここで「まだ足りないよ！」というUIメッセージを出す処理を足してもいいですね
             }
         }
     }
