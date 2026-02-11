@@ -15,6 +15,10 @@ public class PlayerController : MonoBehaviour
 
     private Animator anim;
 
+    [Header("Audio Settings")]
+    public AudioSource seSource;    // さっき追加したAudioSourceをドラッグして入れる
+    public AudioClip pickupSound; // 鳴らしたい音のファイルをドラッグして入れる
+
     void Start()
     {
         // Rigidbodyの代わりにCharacterControllerを取得
@@ -63,7 +67,10 @@ public class PlayerController : MonoBehaviour
 
         // 重力と移動の実行（既存のコード）
         moveDirection.y -= gravity * Time.deltaTime;
-        controller.Move(moveDirection * Time.deltaTime);
+        if (controller != null && controller.enabled)
+        {
+            controller.Move(moveDirection * Time.deltaTime);
+        }
     }
 
     void OnTriggerEnter(Collider other)
@@ -71,6 +78,12 @@ public class PlayerController : MonoBehaviour
         // 報酬アイテムに触れたとき
         if (other.gameObject.CompareTag("PickUp"))
         {
+            // 音を鳴らす（PlayOneShotは音が重なっても綺麗に聞こえる）
+            if (seSource != null && pickupSound != null)
+            {
+                seSource.pitch = Random.Range(0.9f, 1.1f); // 少し音程をランダムに変える
+                seSource.PlayOneShot(pickupSound);
+            }
 
             // 【重要】まず相手のコライダーを即座に無効化する！
             // これにより、このフレーム内での2回目以降の判定を物理的に遮断します。

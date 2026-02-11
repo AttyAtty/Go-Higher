@@ -376,6 +376,22 @@ public class GameManager : MonoBehaviour
     // ゲームオーバー・勝利判定
     public void GameOver(string message, bool isCaught = false, bool isWin = false)
     {
+        // --- 追加：音の管理クラスを呼ぶ ---
+        ResultAudioManager ram = GetComponent<ResultAudioManager>();
+        if (ram != null)
+        {
+            if (isWin)
+            {
+                ram.PlayWinSE(); // 時間いっぱい生き残った
+            }
+            else if (isCaught)
+            {
+                ram.PlayLoseSE(); // enemyに当たった
+            }
+            // Time Upなどで別の音にしたい場合はさらに条件を分ければOK
+        }
+        // ---------------------------------
+
         // result画面でのアニメーションの命令
         ShowResult(isWin);
         // Unity のAnimatorの矢印のCan Transition To Selfのチェックを外すこと。そうしないと自分自身へ繊維し続けて、アニメーションが１コマ目で固定されて静止画に見える感じになってしまう

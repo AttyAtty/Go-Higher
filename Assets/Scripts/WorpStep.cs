@@ -3,8 +3,10 @@ using UnityEngine;
 public class WarpStep : MonoBehaviour
 {
     [Header("Color Settings")]
-    public Material lockedMaterial;   // インスペクターで赤色を入れる
+    public Material lockedMaterial;   // インスペクターで白色を入れる
     public Material unlockedMaterial; // インスペクターで緑色を入れる
+    public AudioSource audioSource; // インスペクターで自身、または子のAudioSourceをセット
+    public AudioClip warpSound;      // ワープ音のファイルをセット
 
     private Renderer targetRenderer;
     void Start()
@@ -39,6 +41,14 @@ public class WarpStep : MonoBehaviour
         {
             if (GameManager.instance != null && GameManager.instance.isWarpEnabled)
             {
+                // ワープ音を鳴らす
+                if (audioSource != null && warpSound != null)
+                {
+                    // audioSource.time = 0.1f; //音をとばす
+                    audioSource.PlayOneShot(warpSound);
+                }
+
+
                 // 1. CharacterControllerを取得
                 CharacterController cc = other.GetComponent<CharacterController>();
 
