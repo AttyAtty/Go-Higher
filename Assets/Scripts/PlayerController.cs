@@ -13,10 +13,15 @@ public class PlayerController : MonoBehaviour
     public float speed = 10;
     public float gravity = 20.0f; // 重力の設定
 
+    private Animator anim;
+
     void Start()
     {
         // Rigidbodyの代わりにCharacterControllerを取得
         controller = GetComponent<CharacterController>();
+        // 自身のAnimatorコンポーネントを取得
+        anim = GetComponent<Animator>();
+
     }
 
     void OnMove(InputValue movementValue)
@@ -31,6 +36,15 @@ public class PlayerController : MonoBehaviour
         // 1. 移動方向の計算（既存のコード）
         Vector3 moveInput = new Vector3(movementX, 0.0f, movementZ);
 
+
+        //---アニメーション制御-- -
+        if (anim != null)
+        {
+            // 入力があるときは 1 に近くなり、止まっているときは 0 になる
+            float currentSpeed = moveInput.magnitude;
+            anim.SetFloat("Speed", currentSpeed);
+        }
+
         if (controller.isGrounded)
         {
             moveDirection = moveInput * speed;
@@ -40,10 +54,7 @@ public class PlayerController : MonoBehaviour
             {
                 // 移動方向を向くための回転を作成
                 Quaternion targetRotation = Quaternion.LookRotation(moveInput);
-
-                // 瞬時に向かせる場合：
-                // transform.rotation = targetRotation;
-
+ 
                 // 滑らかに向かせる場合（こっちがおすすめ）：
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
             }
@@ -60,6 +71,16 @@ public class PlayerController : MonoBehaviour
         // 報酬アイテムに触れたとき
         if (other.gameObject.CompareTag("PickUp"))
         {
+
+            // 【重要】まず相手のコライダーを即座に無効化する！
+            // これにより、このフレーム内での2回目以降の判定を物理的に遮断します。
+            // 謎に一つ集めたのに対して複数回反応してしまう問題があったので、その対策
+            Collider pickupCollider = other.gameObject.GetComponent<Collider>();
+            if (pickupCollider != null)
+            {
+                pickupCollider.enabled = false;
+            }
+
             // アイテムを消す
             Destroy(other.gameObject);
 
@@ -80,7 +101,7 @@ public class PlayerController : MonoBehaviour
             gameObject.SetActive(false);
             if (GameManager.instance != null)
             {
-                GameManager.instance.GameOver("You Lose!", true);
+                GameManager.instance.GameOver("You Lose!", true, false);
             }
             return; // 負けたのでここで処理終了
         }

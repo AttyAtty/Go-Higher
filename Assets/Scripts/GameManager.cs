@@ -53,6 +53,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        Time.timeScale = 1f;
         winTextObject.SetActive(false);
 
         SetupInitialFloor("Floor1", 1, 0.5f);
@@ -143,7 +144,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            GameOver("Time Up!", false);
+            GameOver("Time Up!", false, true);
         }
 
         // 高さ（Y座標）の更新
@@ -205,7 +206,7 @@ public class GameManager : MonoBehaviour
 
         // オブジェクト生成（階数 nextFloorToCreate に応じて増加）
         SpawnEnemies(nextPos, nextFloorToCreate);
-        SpawnPickups(nextPos, 1 + 2 * nextFloorToCreate);
+        SpawnPickups(nextPos, 3 + nextFloorToCreate);
         SpawnObstacles(nextPos, nextFloorToCreate * 2);
         SpawnDynamicBoxes(nextPos, 1 + nextFloorToCreate);
 
@@ -354,9 +355,31 @@ public class GameManager : MonoBehaviour
         return pos;
     }
 
-    // ゲームオーバー・勝利判定
-    public void GameOver(string message, bool isCaught = false)
+    public Animator resultBoyAnim; // インスペクターで「撮影用」のAnimatorをセットする
+
+    void ShowResult(bool isWin)
     {
+        // リザルト画面を表示する処理...
+
+        if (isWin)
+        {
+            // 逃げ切った時（Winアニメーション）
+            resultBoyAnim.SetInteger("ResultType", 1);
+        }
+        else
+        {
+            // 捕まった時（Loseアニメーション）
+            resultBoyAnim.SetInteger("ResultType", 2);
+        }
+    }
+
+    // ゲームオーバー・勝利判定
+    public void GameOver(string message, bool isCaught = false, bool isWin = false)
+    {
+        // result画面でのアニメーションの命令
+        ShowResult(isWin);
+        // Unity のAnimatorの矢印のCan Transition To Selfのチェックを外すこと。そうしないと自分自身へ繊維し続けて、アニメーションが１コマ目で固定されて静止画に見える感じになってしまう
+
         isGameActive = false;
         winTextObject.SetActive(true);
         winTextObject.GetComponent<TextMeshProUGUI>().text = message;
@@ -384,8 +407,9 @@ public class GameManager : MonoBehaviour
         GameController gc = GetComponent<GameController>();
         if (gc != null)
         {
-            gc.GameOver(score, currentFloor, isCaught);
+            gc.GameOver(score, currentFloor, isCaught, isWin);
         }
+
 
     }
 

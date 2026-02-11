@@ -14,7 +14,7 @@ public class GameController : MonoBehaviour
     }
 
     // ゲームが終わった時にこれを呼ぶ（何かに当たった時など）
-    public void GameOver(int score, int floor, bool isCaught)
+    public void GameOver(int score, int floor, bool isCaught, bool isWin)
     {
         resultMenu.SetActive(true); // メニューを表示
         Time.timeScale = 0f;        // ゲームの時間を止める
@@ -24,9 +24,13 @@ public class GameController : MonoBehaviour
 
         if (isCaught)
         {
-            // 敵に当たった場合は、情け容赦なく0点！
-            finalResultText.text = $"<color=red>CAUGHT BY ENEMY!</color>\n" +
-                                   $"TOTAL: 0";
+            // ボーナス計算
+            int floorBonus = floor * 2;
+            finalScore = score + floorBonus;
+
+            finalResultText.text = $"Pickups: {score}\n" +
+                               $"Floor Bonus: {floorBonus}\n" +
+                               $"TOTAL: {finalScore}";
         }
         else
         {
